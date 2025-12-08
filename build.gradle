@@ -145,6 +145,7 @@ checkerFramework {
     "org.checkerframework.checker.index.IndexChecker",
     "org.checkerframework.checker.interning.InterningChecker",
     "org.checkerframework.checker.lock.LockChecker",
+    "org.checkerframework.checker.modifiability.ModifiabilityChecker",
     "org.checkerframework.checker.nullness.NullnessChecker",
     "org.checkerframework.checker.regex.RegexChecker",
     "org.checkerframework.checker.resourceleak.ResourceLeakChecker",
@@ -165,7 +166,7 @@ checkerFramework {
 // To use a snapshot version of the Checker Framework.
 if (false) {
   // If the above is true, change it to false after CF is released.
-  ext.checkerFrameworkVersion = "3.52.0"
+  ext.checkerFrameworkVersion = "3.52.1-SNAPSHOT"
   dependencies {
     compileOnly("org.checkerframework:checker-qual:${checkerFrameworkVersion}")
     testCompileOnly("org.checkerframework:checker-qual:${checkerFrameworkVersion}")
