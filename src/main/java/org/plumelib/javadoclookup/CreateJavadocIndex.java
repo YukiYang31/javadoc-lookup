@@ -97,7 +97,7 @@ public final class CreateJavadocIndex {
       for (Element classElt : classElts) {
         Element ahref = classElt.selectFirst("a[href]");
         if (ahref == null) {
-          System.err.println("In " + indexFileName + ", no <a href=...> in: " + classElt);
+          System.err.println("In %s, no <a href=...> in: %s".formatted(indexFileName, classElt));
           System.err.println("parent = " + classElt.parent());
           System.err.println("CreateJavadocIndex FAILED; exiting.");
           System.exit(1);
@@ -137,9 +137,8 @@ public final class CreateJavadocIndex {
     System.out.println(";; arguments: " + String.join(" ", indexFileNames));
     System.out.println("(setq javadoc-html-refs '(");
 
-    // TODO: Under JDK 18, `@NonNull` is required here but no warning suppression is required.
     @NonNull List<@KeyFor("index") String> sortedKeys =
-        index.keySet().stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
+        index.keySet().stream().sorted(Comparator.reverseOrder()).toList();
     for (String key : sortedKeys) {
       System.out.print(" (\"" + key.replace("\"", "\\\"") + "\"");
       for (String ref : index.get(key)) {
@@ -152,7 +151,8 @@ public final class CreateJavadocIndex {
     System.out.println();
     System.out.println("(setq javadoc-ignored-prefixes (list");
     for (String prefix : ignoredPrefixes) {
-      System.out.println("  (concat \"^\" (regexp-quote \"" + prefix + File.separator + "\"))");
+      System.out.println(
+          "  (concat \"^\" (regexp-quote \"%s%s\"))".formatted(prefix, File.separator));
     }
     System.out.println("))");
   }
@@ -179,11 +179,10 @@ public final class CreateJavadocIndex {
     }
     // The API documentation for Jgit is within a "org.eclipse.jgit" subdirectory.
     Path orgEclipseJgitSubdirectory = ignoredPrefix.resolve("org.eclipse.jgit");
-    if (orgEclipseJgitSubdirectory.toFile().exists()
-        && orgEclipseJgitSubdirectory.toFile().isDirectory()) {
+    if (Files.isDirectory(orgEclipseJgitSubdirectory)) {
       ignoredPrefix = orgEclipseJgitSubdirectory;
     }
-    if (Files.exists(Paths.get(ignoredPrefix.toString(), "java.base"))) {
+    if (Files.exists(ignoredPrefix.resolve("java.base"))) {
       // It's the JDK.  Handle modules.
       // TODO: it would be better to compare paths to packages, without special-casing
       try (DirectoryStream<Path> stream = Files.newDirectoryStream(ignoredPrefix)) {
@@ -217,17 +216,16 @@ public final class CreateJavadocIndex {
       return;
     }
 
-    item = item.replaceAll("&lt;", "<");
-    item = item.replaceAll("&gt;", ">");
+    item = item.replace("&lt;", "<");
+    item = item.replace("&gt;", ">");
     item = item.replaceAll("</?code>", "");
     item = item.replaceAll("<span class=\"[^\"]*\">", "");
-    item = item.replaceAll("</span>", "");
+    item = item.replace("</span>", "");
     item = item.replaceAll("@[a-zA-Z.]+ ", "");
     item = item.replaceAll("^@", "");
 
-    String fileHref = "file:" + Paths.get(dir.toString(), href).normalize();
-    fileHref = fileHref.replaceAll("\\(", "-");
-    fileHref = fileHref.replaceAll("\\)", "-");
+    String fileHref = "file:" + dir.resolve(href).normalize();
+    fileHref = fileHref.replaceAll("[()]", "-");
     fileHref = fileHref.replaceAll("@[a-zA-Z.]+ ", "");
     if (debug) {
       System.out.println("    fileHref: " + fileHref);
@@ -287,12 +285,12 @@ public final class CreateJavadocIndex {
           }
           if (Files.exists(globDirPath)) {
             try (DirectoryStream<Path> stream =
-                Files.newDirectoryStream(Paths.get(globDirName), globFileName)) {
+                Files.newDirectoryStream(globDirPath, globFileName)) {
               for (Path entry : stream) {
                 result.add(entry.toString());
               }
             } catch (DirectoryIteratorException ex) {
-              // I/O error encounted during the iteration, the cause is an IOException
+              // I/O error encountered during the iteration, the cause is an IOException
               throw ex.getCause();
             }
           } else {
