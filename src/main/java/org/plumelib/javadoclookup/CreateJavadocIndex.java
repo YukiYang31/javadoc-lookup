@@ -133,6 +133,7 @@ public final class CreateJavadocIndex {
       }
     }
 
+    System.out.println(";; -*- lexical-binding: t; -*-");
     System.out.println(";; For use by Emacs function javadoc-lookup.");
     System.out.println(";; Created by CreateJavadocIndex.");
     System.out.println(";; arguments: " + String.join(" ", indexFileNames));
@@ -141,9 +142,9 @@ public final class CreateJavadocIndex {
     @NonNull List<@KeyFor("index") String> sortedKeys =
         index.keySet().stream().sorted(Comparator.reverseOrder()).toList();
     for (String key : sortedKeys) {
-      System.out.print(" (\"" + key.replace("\"", "\\\"") + "\"");
+      System.out.print(" (\"" + escapeElisp(key) + "\"");
       for (String ref : index.get(key)) {
-        System.out.print(" \"" + ref + "\"");
+        System.out.print(" \"" + escapeElisp(ref) + "\"");
       }
       System.out.println(")");
     }
@@ -153,9 +154,23 @@ public final class CreateJavadocIndex {
     System.out.println("(setq javadoc-ignored-prefixes (list");
     for (String prefix : ignoredPrefixes) {
       System.out.println(
-          "  (concat \"^\" (regexp-quote \"%s%s\"))".formatted(prefix, File.separator));
+          "  (concat \"^\" (regexp-quote \"%s\"))".formatted(escapeElisp(prefix + File.separator)));
     }
     System.out.println("))");
+  }
+
+  /**
+   * Returns the argument, escaped for output within an Emacs Lisp string literal. Without this, a
+   * backslash in a file name or a symbol would be an escape character in the output, and a double
+   * quote would end the string literal.
+   *
+   * @param s the text to appear within an Emacs Lisp string literal
+   * @return the text, with each backslash and double quote escaped
+   */
+  private static String escapeElisp(String s) {
+    // Escape backslashes before quotes, so that the backslash that escapes a quote is not
+    // itself escaped.
+    return s.replace("\\", "\\\\").replace("\"", "\\\"");
   }
 
   /**
